@@ -246,6 +246,37 @@ export default function BettingDashboard() {
       </div>
 
       <div className="p-6">
+        {/* Edge Band Performance Indicators */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold mb-6">📊 Edge Band Performance Guide</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+            {[
+              { band: "0-2", emoji: "🔴", record: "2-3", pct: "40%", desc: "Avoid" },
+              { band: "2-5", emoji: "🟡", record: "3-5", pct: "37%", desc: "Weak" },
+              { band: "5-7", emoji: "🟢", record: "3-1", pct: "75%", desc: "Good" },
+              { band: "7-9", emoji: "🔥", record: "2-0", pct: "100%", desc: "Excellent" },
+              { band: "9-12", emoji: "💎", record: "3-2", pct: "60%", desc: "Strong" },
+              { band: "12+", emoji: "👑", record: "9-5", pct: "64%", desc: "Elite" }
+            ].map((band, index) => (
+              <div key={index} className={`${currentTheme.cardBg} p-4 rounded-lg border ${currentTheme.border} text-center`}>
+                <div className="text-2xl mb-2">{band.emoji}</div>
+                <div className={`font-bold ${currentTheme.text}`}>{band.band} pts</div>
+                <div className={`text-sm ${currentTheme.textSecondary}`}>{band.record}</div>
+                <div className={`font-bold ${band.pct === '100%' ? 'text-green-400' : band.pct.startsWith('7') || band.pct.startsWith('6') ? 'text-yellow-400' : 'text-red-400'}`}>
+                  {band.pct}
+                </div>
+                <div className={`text-xs ${currentTheme.textMuted}`}>{band.desc}</div>
+              </div>
+            ))}
+          </div>
+          
+          <div className={`p-4 rounded-lg ${currentTheme.cardBg} border ${currentTheme.border} text-center`}>
+            <div className={`text-lg font-bold ${currentTheme.text}`}>
+              🏆 Overall Strategy: Target 5+ point edges (22-16 overall, 57.9%)
+            </div>
+          </div>
+        </div>
+
         {/* Performance Summary */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <div className={`${currentTheme.cardBg} p-4 rounded-lg border ${currentTheme.border}`}>
@@ -338,39 +369,6 @@ export default function BettingDashboard() {
           </div>
         )}
 
-        {/* Edge Band Performance Section */}
-        <div className="mt-8">
-          <h2 className="text-2xl font-bold mb-6">📊 Edge Band Historical Performance</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {[
-              { band: "0-2", emoji: "🔴", record: "2-3", pct: "40%", desc: "Avoid" },
-              { band: "2-5", emoji: "🟡", record: "3-5", pct: "37%", desc: "Weak" },
-              { band: "5-7", emoji: "🟢", record: "3-1", pct: "75%", desc: "Good" },
-              { band: "7-9", emoji: "🔥", record: "2-0", pct: "100%", desc: "Excellent" },
-              { band: "9-12", emoji: "💎", record: "3-2", pct: "60%", desc: "Strong" },
-              { band: "12+", emoji: "👑", record: "9-5", pct: "64%", desc: "Elite" }
-            ].map((band, index) => (
-              <div key={index} className={`${currentTheme.cardBg} p-4 rounded-lg border ${currentTheme.border} text-center`}>
-                <div className="text-2xl mb-2">{band.emoji}</div>
-                <div className={`font-bold ${currentTheme.text}`}>{band.band} pts</div>
-                <div className={`text-sm ${currentTheme.textSecondary}`}>{band.record}</div>
-                <div className={`font-bold ${band.pct === '100%' ? 'text-green-400' : band.pct.startsWith('7') || band.pct.startsWith('6') ? 'text-yellow-400' : 'text-red-400'}`}>
-                  {band.pct}
-                </div>
-                <div className={`text-xs ${currentTheme.textMuted}`}>{band.desc}</div>
-              </div>
-            ))}
-          </div>
-          
-          <div className={`mt-6 p-4 rounded-lg ${currentTheme.cardBg} border ${currentTheme.border} text-center`}>
-            <div className={`text-lg font-bold ${currentTheme.text}`}>
-              🏆 Overall Record: 22-16 (57.9%)
-            </div>
-            <div className={`text-sm ${currentTheme.textMuted} mt-2`}>
-              Strategy: Target 5+ point edges • Avoid under 5 points
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
