@@ -245,38 +245,38 @@ export default function BettingDashboard() {
         </div>
       </div>
 
-      <div className="p-6">
-        {/* Edge Band Performance Indicators */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-6">📊 Edge Band Performance Guide</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-            {[
-              { band: "0-2", emoji: "🔴", record: "2-3", pct: "40%", desc: "Avoid" },
-              { band: "2-5", emoji: "🟡", record: "3-5", pct: "37%", desc: "Weak" },
-              { band: "5-7", emoji: "🟢", record: "3-1", pct: "75%", desc: "Good" },
-              { band: "7-9", emoji: "🔥", record: "2-0", pct: "100%", desc: "Excellent" },
-              { band: "9-12", emoji: "💎", record: "3-2", pct: "60%", desc: "Strong" },
-              { band: "12+", emoji: "👑", record: "9-5", pct: "64%", desc: "Elite" }
-            ].map((band, index) => (
-              <div key={index} className={`${currentTheme.cardBg} p-4 rounded-lg border ${currentTheme.border} text-center`}>
-                <div className="text-2xl mb-2">{band.emoji}</div>
-                <div className={`font-bold ${currentTheme.text}`}>{band.band} pts</div>
-                <div className={`text-sm ${currentTheme.textSecondary}`}>{band.record}</div>
-                <div className={`font-bold ${band.pct === '100%' ? 'text-green-400' : band.pct.startsWith('7') || band.pct.startsWith('6') ? 'text-yellow-400' : 'text-red-400'}`}>
-                  {band.pct}
-                </div>
-                <div className={`text-xs ${currentTheme.textMuted}`}>{band.desc}</div>
+      {/* Edge Band Performance Indicators */}
+      <div className={`${currentTheme.headerBg} border-b ${currentTheme.border} p-6`}>
+        <h2 className="text-2xl font-bold mb-6 text-white">📊 Edge Band Performance Guide</h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+          {[
+            { band: "0-2", emoji: "🔴", record: "2-3", pct: "40%", desc: "Avoid" },
+            { band: "2-5", emoji: "🟡", record: "3-5", pct: "37%", desc: "Weak" },
+            { band: "5-7", emoji: "🟢", record: "3-1", pct: "75%", desc: "Good" },
+            { band: "7-9", emoji: "🔥", record: "2-0", pct: "100%", desc: "Excellent" },
+            { band: "9-12", emoji: "💎", record: "3-2", pct: "60%", desc: "Strong" },
+            { band: "12+", emoji: "👑", record: "9-5", pct: "64%", desc: "Elite" }
+          ].map((band, index) => (
+            <div key={index} className={`${currentTheme.cardBg} p-4 rounded-lg border ${currentTheme.border} text-center`}>
+              <div className="text-2xl mb-2">{band.emoji}</div>
+              <div className={`font-bold ${currentTheme.text}`}>{band.band} pts</div>
+              <div className={`text-sm ${currentTheme.textSecondary}`}>{band.record}</div>
+              <div className={`font-bold ${band.pct === '100%' ? 'text-green-400' : band.pct.startsWith('7') || band.pct.startsWith('6') ? 'text-yellow-400' : 'text-red-400'}`}>
+                {band.pct}
               </div>
-            ))}
-          </div>
-          
-          <div className={`p-4 rounded-lg ${currentTheme.cardBg} border ${currentTheme.border} text-center`}>
-            <div className={`text-lg font-bold ${currentTheme.text}`}>
-              🏆 Overall Strategy: Target 5+ point edges (22-16 overall, 57.9%)
+              <div className={`text-xs ${currentTheme.textMuted}`}>{band.desc}</div>
             </div>
+          ))}
+        </div>
+        
+        <div className={`p-4 rounded-lg ${currentTheme.cardBg} border ${currentTheme.border} text-center`}>
+          <div className={`text-lg font-bold ${currentTheme.text}`}>
+            🏆 Overall Strategy: Target 5+ point edges (22-16 overall, 57.9%)
           </div>
         </div>
+      </div>
 
+      <div className="p-6">
         {/* Performance Summary */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <div className={`${currentTheme.cardBg} p-4 rounded-lg border ${currentTheme.border}`}>
@@ -300,74 +300,122 @@ export default function BettingDashboard() {
           </div>
         </div>
 
-        {/* Betting Opportunities */}
-        <h2 className="text-2xl font-bold mb-6">🎯 Betting Opportunities (Edge ≥ {minEdge})</h2>
+        {/* Collapsible Prediction Bins by Edge Band */}
+        <h2 className="text-2xl font-bold mb-6">🎯 Betting Predictions by Confidence</h2>
         
-        {bettingOpps.length === 0 ? (
-          <div className={`${currentTheme.cardBg} p-8 rounded-lg border ${currentTheme.border} text-center`}>
-            <div className={currentTheme.textMuted}>No betting opportunities found with edge ≥ {minEdge}</div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {bettingOpps.map((bet, index) => {
-              // Determine card styling based on edge band
-              let borderColor, bgColor;
-              if (bet.edgeBand === '12+') {
-                borderColor = 'border-purple-500';
-                bgColor = theme === 'neon' ? 'bg-purple-500/10' : 'bg-purple-900/20';
-              } else if (bet.edgeBand === '9-12') {
-                borderColor = 'border-blue-500';
-                bgColor = theme === 'neon' ? 'bg-blue-500/10' : 'bg-blue-900/20';
-              } else if (bet.edgeBand === '7-9') {
-                borderColor = 'border-red-500';
-                bgColor = theme === 'neon' ? 'bg-red-500/10' : 'bg-red-900/20';
-              } else if (bet.edgeBand === '5-7') {
-                borderColor = 'border-green-500';
-                bgColor = theme === 'neon' ? 'bg-green-500/10' : 'bg-green-900/20';
-              } else {
-                borderColor = 'border-yellow-500';
-                bgColor = theme === 'neon' ? 'bg-yellow-500/10' : 'bg-yellow-900/20';
-              }
+        {(() => {
+          // Group predictions by edge band
+          const bandGroups: { [key: string]: any[] } = {};
+          const bandOrder = ['12+', '9-12', '7-9', '5-7', '2-5', '0-2'];
+          
+          bettingOpps.forEach(bet => {
+            if (!bandGroups[bet.edgeBand]) {
+              bandGroups[bet.edgeBand] = [];
+            }
+            bandGroups[bet.edgeBand].push(bet);
+          });
+          
+          // Also include non-betting opportunities for completeness
+          data.predictions
+            .filter(pred => pred.Line && pred.Line !== 'N/A' && pred.Line !== 'No Line Available')
+            .forEach(pred => {
+              const edge = parseFloat(pred.Edge) || 0;
+              const edgeBand = edge < 2 ? '0-2' : edge < 5 ? '2-5' : edge < 7 ? '5-7' : edge < 9 ? '7-9' : edge < 12 ? '9-12' : '12+';
               
-              return (
-                <div key={index} className={`${currentTheme.cardBg} ${bgColor} ${borderColor} border-2 rounded-xl p-6`}>
-                  <h3 className={`text-xl font-bold mb-2 flex items-center gap-2 ${currentTheme.text}`}>
-                    <span>{bet.bandEmoji}</span>
-                    <span>{bet.betRec}</span>
-                  </h3>
-                  
-                  <p className={`${currentTheme.textSecondary} mb-4`}>{bet.Matchup}</p>
-                  
-                  <div className="grid grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <div className={`font-semibold ${currentTheme.textSecondary}`}>Edge</div>
-                      <div className={`text-xl font-bold ${currentTheme.text}`}>{bet.edge.toFixed(1)}</div>
-                    </div>
-                    
-                    <div>
-                      <div className={`font-semibold ${currentTheme.textSecondary}`}>Band</div>
-                      <div className={currentTheme.text}>{bet.edgeBand}</div>
-                    </div>
-                    
-                    <div>
-                      <div className={`font-semibold ${currentTheme.textSecondary}`}>Type</div>
-                      <div className={currentTheme.text}>{bet.betType}</div>
-                    </div>
-                    
-                    <div>
-                      <div className={`font-semibold ${currentTheme.textSecondary}`}>Confidence</div>
-                      <div className={currentTheme.text}>{bet.confidence}</div>
-                    </div>
+              if (edge < minEdge) {
+                if (!bandGroups[edgeBand]) {
+                  bandGroups[edgeBand] = [];
+                }
+                
+                const predDiff = parseFloat(pred['Predicted Difference']) || 0;
+                const vegasLine = parseFloat(pred.Line) || 0;
+                const bandEmoji = edgeBand === '0-2' ? '🔴' : edgeBand === '2-5' ? '🟡' : edgeBand === '5-7' ? '🟢' : edgeBand === '7-9' ? '🔥' : edgeBand === '9-12' ? '💎' : '👑';
+                
+                bandGroups[edgeBand].push({
+                  ...pred,
+                  edge,
+                  edgeBand,
+                  bandEmoji,
+                  betRec: 'Below Threshold',
+                  confidence: 'Low Edge',
+                  vegasLine
+                });
+              }
+            });
+          
+          return bandOrder.map(band => {
+            if (!bandGroups[band] || bandGroups[band].length === 0) return null;
+            
+            const games = bandGroups[band].sort((a, b) => b.edge - a.edge);
+            const bandInfo = {
+              '12+': { emoji: '👑', name: 'Elite', pct: '64%', color: 'border-purple-500' },
+              '9-12': { emoji: '💎', name: 'Strong', pct: '60%', color: 'border-blue-500' },
+              '7-9': { emoji: '🔥', name: 'Excellent', pct: '100%', color: 'border-red-500' },
+              '5-7': { emoji: '🟢', name: 'Good', pct: '75%', color: 'border-green-500' },
+              '2-5': { emoji: '🟡', name: 'Weak', pct: '37%', color: 'border-yellow-500' },
+              '0-2': { emoji: '🔴', name: 'Avoid', pct: '40%', color: 'border-red-500' }
+            }[band];
+            
+            return (
+              <details key={band} className="mb-4" open={['12+', '9-12', '7-9'].includes(band)}>
+                <summary className={`${currentTheme.cardBg} p-4 rounded-lg border ${bandInfo?.color} cursor-pointer hover:opacity-80 transition-opacity`}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xl font-bold flex items-center gap-2">
+                      {bandInfo?.emoji} {band} Point Edge - {bandInfo?.name} ({bandInfo?.pct})
+                    </span>
+                    <span className={`text-sm ${currentTheme.textMuted}`}>
+                      {games.length} games
+                    </span>
                   </div>
-                  
-                  <div className={`mt-4 pt-4 border-t ${currentTheme.border} text-xs ${currentTheme.textMuted}`}>
-                    Our Prediction: {bet.Favorite} -{bet['Predicted Difference']} | Vegas: {bet.vegasLine}
-                  </div>
+                </summary>
+                
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {games.map((bet, index) => {
+                    const isGoodBet = bet.edge >= minEdge;
+                    
+                    return (
+                      <div key={index} className={`${currentTheme.cardBg} ${isGoodBet ? `${bandInfo?.color} border-2` : `border ${currentTheme.border}`} rounded-lg p-4 ${isGoodBet ? 'shadow-lg' : ''}`}>
+                        <h4 className={`font-bold mb-2 flex items-center gap-2 ${currentTheme.text}`}>
+                          <span>{bet.bandEmoji}</span>
+                          <span>{bet.Matchup}</span>
+                        </h4>
+                        
+                        {isGoodBet && (
+                          <div className={`text-lg font-bold mb-2 ${currentTheme.accent}`}>
+                            {bet.betRec}
+                          </div>
+                        )}
+                        
+                        <div className="grid grid-cols-3 gap-2 text-sm">
+                          <div>
+                            <div className={`font-semibold ${currentTheme.textSecondary}`}>Edge</div>
+                            <div className={currentTheme.text}>{bet.edge.toFixed(1)}</div>
+                          </div>
+                          
+                          <div>
+                            <div className={`font-semibold ${currentTheme.textSecondary}`}>Model</div>
+                            <div className={currentTheme.text}>{bet['Predicted Difference']}</div>
+                          </div>
+                          
+                          <div>
+                            <div className={`font-semibold ${currentTheme.textSecondary}`}>Vegas</div>
+                            <div className={currentTheme.text}>{bet.Line}</div>
+                          </div>
+                        </div>
+                        
+                        {!isGoodBet && (
+                          <div className={`mt-2 text-xs ${currentTheme.textMuted}`}>
+                            Below {minEdge} threshold
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
-          </div>
-        )}
+              </details>
+            );
+          }).filter(Boolean);
+        })()}
 
       </div>
     </div>
