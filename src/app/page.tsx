@@ -305,7 +305,7 @@ export default function BettingDashboard() {
         
         {(() => {
           // Group predictions by edge band
-          const bandGroups: { [key: string]: any[] } = {};
+          const bandGroups: { [key: string]: (Prediction & { edge: number; edgeBand: string; bandEmoji: string; betRec: string; confidence: string; vegasLine: number })[] } = {};
           const bandOrder = ['12+', '9-12', '7-9', '5-7', '2-5', '0-2'];
           
           bettingOpps.forEach(bet => {
@@ -327,7 +327,6 @@ export default function BettingDashboard() {
                   bandGroups[edgeBand] = [];
                 }
                 
-                const predDiff = parseFloat(pred['Predicted Difference']) || 0;
                 const vegasLine = parseFloat(pred.Line) || 0;
                 const bandEmoji = edgeBand === '0-2' ? '🔴' : edgeBand === '2-5' ? '🟡' : edgeBand === '5-7' ? '🟢' : edgeBand === '7-9' ? '🔥' : edgeBand === '9-12' ? '💎' : '👑';
                 
