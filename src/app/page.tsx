@@ -28,7 +28,7 @@ type Theme = 'dark' | 'light' | 'neon' | 'minimal';
 export default function BettingDashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [minEdge, setMinEdge] = useState(2.0);
+  const minEdge = 2.0; // Fixed threshold, no longer user-adjustable
   const [theme, setTheme] = useState<Theme>('dark');
 
   useEffect(() => {
@@ -225,19 +225,6 @@ export default function BettingDashboard() {
             </select>
           </div>
           
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-medium">Minimum Edge:</label>
-            <input
-              type="range"
-              min="0"
-              max="10"
-              step="0.5"
-              value={minEdge}
-              onChange={(e) => setMinEdge(parseFloat(e.target.value))}
-              className="w-32"
-            />
-            <span className={`text-sm ${currentTheme.textSecondary}`}>{minEdge}</span>
-          </div>
           
           <div className={`ml-auto text-sm ${currentTheme.textMuted}`}>
             Last updated: {new Date(data.lastUpdated).toLocaleTimeString()}
