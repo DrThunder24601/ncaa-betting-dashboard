@@ -403,6 +403,84 @@ export default function BettingDashboard() {
           }).filter(Boolean);
         })()}
 
+        {/* Games by Schedule Order */}
+        <h2 className="text-2xl font-bold mb-6 mt-12">📅 Games by Schedule</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {data.predictions
+            .filter(pred => pred.Line && pred.Line !== 'N/A' && pred.Line !== 'No Line Available')
+            .map((pred, index) => {
+              const edge = parseFloat(pred.Edge) || 0;
+              const predDiff = parseFloat(pred['Predicted Difference']) || 0;
+              const vegasLine = parseFloat(pred.Line) || 0;
+              const edgeBand = edge < 2 ? '0-2' : edge < 5 ? '2-5' : edge < 7 ? '5-7' : edge < 9 ? '7-9' : edge < 12 ? '9-12' : '12+';
+              const bandEmoji = edgeBand === '0-2' ? '🔴' : edgeBand === '2-5' ? '🟡' : edgeBand === '5-7' ? '🟢' : edgeBand === '7-9' ? '🔥' : edgeBand === '9-12' ? '💎' : '👑';
+              
+              let betRec = '';
+              let betType = '';
+              
+              if (edge >= minEdge) {
+                if (predDiff > vegasLine) {
+                  betRec = `Take ${pred.Favorite} -${vegasLine}`;
+                  betType = 'Favorite';
+                } else {
+                  betRec = `Take ${pred.Underdog} +${vegasLine}`;
+                  betType = 'Underdog';
+                }
+              } else {
+                betRec = 'Below Threshold';
+                betType = 'Low Edge';
+              }
+              
+              const isGoodBet = edge >= minEdge;
+              const bandInfo = {
+                '12+': { color: 'border-purple-500' },
+                '9-12': { color: 'border-blue-500' },
+                '7-9': { color: 'border-red-500' },
+                '5-7': { color: 'border-green-500' },
+                '2-5': { color: 'border-yellow-500' },
+                '0-2': { color: 'border-red-500' }
+              }[edgeBand];
+              
+              return (
+                <div key={index} className={`${currentTheme.cardBg} ${isGoodBet ? `${bandInfo?.color} border-2` : `border ${currentTheme.border}`} rounded-lg p-4 ${isGoodBet ? 'shadow-lg' : ''}`}>
+                  <h4 className={`font-bold mb-2 flex items-center gap-2 ${currentTheme.text}`}>
+                    <span>{bandEmoji}</span>
+                    <span>{pred.Matchup}</span>
+                  </h4>
+                  
+                  {isGoodBet && (
+                    <div className={`text-lg font-bold mb-2 ${currentTheme.accent}`}>
+                      {betRec}
+                    </div>
+                  )}
+                  
+                  <div className="grid grid-cols-3 gap-2 text-sm">
+                    <div>
+                      <div className={`font-semibold ${currentTheme.textSecondary}`}>Edge</div>
+                      <div className={currentTheme.text}>{edge.toFixed(1)}</div>
+                    </div>
+                    
+                    <div>
+                      <div className={`font-semibold ${currentTheme.textSecondary}`}>Model</div>
+                      <div className={currentTheme.text}>{pred['Predicted Difference']}</div>
+                    </div>
+                    
+                    <div>
+                      <div className={`font-semibold ${currentTheme.textSecondary}`}>Vegas</div>
+                      <div className={currentTheme.text}>{pred.Line}</div>
+                    </div>
+                  </div>
+                  
+                  {!isGoodBet && (
+                    <div className={`mt-2 text-xs ${currentTheme.textMuted}`}>
+                      Below 2.0 threshold
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+        </div>
+
       </div>
     </div>
   );
