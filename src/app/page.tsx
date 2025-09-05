@@ -573,15 +573,10 @@ export default function BettingDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {data?.coverAnalysis?.sort((a, b) => {
-                  // Sort by date if available, otherwise by game name
-                  const dateA = a.Date || a.Game;
-                  const dateB = b.Date || b.Game;
-                  return dateB.localeCompare(dateA);
-                })?.map((game, index) => (
+                {data?.coverAnalysis?.map((game, index) => (
                   <tr key={index} className={`border-b ${currentTheme.border} hover:opacity-80 transition-opacity`}>
                     <td className={`p-3 ${currentTheme.textSecondary}`}>
-                      {game.Date || 'TBD'}
+                      {new Date().toLocaleDateString()}
                     </td>
                     <td className={`p-3 ${currentTheme.text} font-medium`}>
                       {game.Game}
