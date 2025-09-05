@@ -1,1 +1,1 @@
-trigger deploy
+Deploy trigger: 2025-09-05 table update
