@@ -17,9 +17,14 @@ interface CoverAnalysis {
   Result: string;
 }
 
+interface Results {
+  [key: string]: string;
+}
+
 interface DashboardData {
   predictions: Prediction[];
   coverAnalysis: CoverAnalysis[];
+  results: Results[];
   lastUpdated: string;
 }
 
@@ -30,6 +35,7 @@ export default function BettingDashboard() {
   const [loading, setLoading] = useState(true);
   const minEdge = 2.0; // Fixed threshold, no longer user-adjustable
   const [theme, setTheme] = useState<Theme>('dark');
+  const [activeTab, setActiveTab] = useState<'predictions' | 'results' | 'cover-analysis'>('predictions');
 
   useEffect(() => {
     fetchData();
@@ -188,9 +194,6 @@ export default function BettingDashboard() {
               <span className={`px-3 py-1 rounded-full text-xs font-bold bg-green-600 text-white`}>
                 {winRate.toFixed(1)}% WIN RATE
               </span>
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-orange-500 to-yellow-500 text-white">
-                LIVE TRACKING
-              </span>
             </div>
           </div>
           
@@ -232,6 +235,45 @@ export default function BettingDashboard() {
         </div>
       </div>
 
+      {/* Tab Navigation */}
+      <div className={`${currentTheme.headerBg} border-b ${currentTheme.border} p-4`}>
+        <div className="flex space-x-1">
+          <button
+            onClick={() => setActiveTab('predictions')}
+            className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+              activeTab === 'predictions'
+                ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white'
+                : `${currentTheme.textSecondary} hover:${currentTheme.text}`
+            }`}
+          >
+            🎯 Predictions
+          </button>
+          <button
+            onClick={() => setActiveTab('results')}
+            className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+              activeTab === 'results'
+                ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white'
+                : `${currentTheme.textSecondary} hover:${currentTheme.text}`
+            }`}
+          >
+            📊 Results
+          </button>
+          <button
+            onClick={() => setActiveTab('cover-analysis')}
+            className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+              activeTab === 'cover-analysis'
+                ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white'
+                : `${currentTheme.textSecondary} hover:${currentTheme.text}`
+            }`}
+          >
+            🏈 Cover Analysis
+          </button>
+        </div>
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === 'predictions' && (
+        <>
       {/* Edge Band Performance Indicators */}
       <div className={`${currentTheme.headerBg} border-b ${currentTheme.border} p-6`}>
         <h2 className="text-2xl font-bold mb-6 text-white">📊 Edge Band Performance Guide</h2>
@@ -482,6 +524,68 @@ export default function BettingDashboard() {
         </div>
 
       </div>
+        </>
+      )}
+
+      {/* Results Tab */}
+      {activeTab === 'results' && (
+        <div className="p-6">
+          <h2 className="text-2xl font-bold mb-6">📊 Results</h2>
+          <div className={`${currentTheme.cardBg} p-4 rounded-lg border ${currentTheme.border} overflow-x-auto`}>
+            <table className="w-full">
+              <thead>
+                <tr className={`border-b ${currentTheme.border}`}>
+                  {data?.results?.[0] && Object.keys(data.results[0]).map((header) => (
+                    <th key={header} className={`text-left p-2 ${currentTheme.text} font-semibold`}>
+                      {header}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {data?.results?.map((row, index) => (
+                  <tr key={index} className={`border-b ${currentTheme.border} hover:opacity-80 transition-opacity`}>
+                    {Object.values(row).map((value, cellIndex) => (
+                      <td key={cellIndex} className={`p-2 ${currentTheme.textSecondary}`}>
+                        {value}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Cover Analysis Tab */}
+      {activeTab === 'cover-analysis' && (
+        <div className="p-6">
+          <h2 className="text-2xl font-bold mb-6">🏈 Cover Analysis</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {data?.coverAnalysis?.map((game, index) => (
+              <div key={index} className={`${currentTheme.cardBg} p-4 rounded-lg border ${currentTheme.border}`}>
+                <h4 className={`font-bold mb-2 ${currentTheme.text}`}>{game.Game}</h4>
+                <div className="space-y-1">
+                  <div className={`text-sm ${currentTheme.textSecondary}`}>
+                    <span className="font-semibold">Our Bet:</span> {game['Our Bet']}
+                  </div>
+                  <div className={`text-sm ${currentTheme.textSecondary}`}>
+                    <span className="font-semibold">Result:</span> 
+                    <span className={`ml-2 px-2 py-1 rounded text-xs font-bold ${
+                      game.Result === 'WIN' ? 'bg-green-600 text-white' : 
+                      game.Result === 'LOSS' ? 'bg-red-600 text-white' : 
+                      'bg-gray-600 text-white'
+                    }`}>
+                      {game.Result}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
