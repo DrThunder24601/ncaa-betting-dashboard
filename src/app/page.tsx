@@ -575,13 +575,18 @@ export default function BettingDashboard() {
               <tbody>
                 {data?.coverAnalysis?.sort((a, b) => {
                   // Sort by date if available, otherwise by game name
-                  const dateA = (a as any).Date || (a as any).date || (a as any).DATE || a.Game;
-                  const dateB = (b as any).Date || (b as any).date || (b as any).DATE || b.Game;
+                  const aRecord = a as Record<string, string>;
+                  const bRecord = b as Record<string, string>;
+                  const dateA = aRecord.Date || aRecord.date || aRecord.DATE || a.Game;
+                  const dateB = bRecord.Date || bRecord.date || bRecord.DATE || b.Game;
                   return String(dateB).localeCompare(String(dateA));
                 })?.map((game, index) => (
                   <tr key={index} className={`border-b ${currentTheme.border} hover:opacity-80 transition-opacity`}>
                     <td className={`p-3 ${currentTheme.textSecondary}`}>
-                      {game.Date || game.date || game.DATE || 'TBD'}
+                      {(() => {
+                        const gameRecord = game as Record<string, string>;
+                        return gameRecord.Date || gameRecord.date || gameRecord.DATE || 'TBD';
+                      })()}
                     </td>
                     <td className={`p-3 ${currentTheme.text} font-medium`}>
                       {game.Game}
