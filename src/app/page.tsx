@@ -562,27 +562,46 @@ export default function BettingDashboard() {
       {activeTab === 'cover-analysis' && (
         <div className="p-6">
           <h2 className="text-2xl font-bold mb-6">🏈 Cover Analysis</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {data?.coverAnalysis?.map((game, index) => (
-              <div key={index} className={`${currentTheme.cardBg} p-4 rounded-lg border ${currentTheme.border}`}>
-                <h4 className={`font-bold mb-2 ${currentTheme.text}`}>{game.Game}</h4>
-                <div className="space-y-1">
-                  <div className={`text-sm ${currentTheme.textSecondary}`}>
-                    <span className="font-semibold">Our Bet:</span> {game['Our Bet']}
-                  </div>
-                  <div className={`text-sm ${currentTheme.textSecondary}`}>
-                    <span className="font-semibold">Result:</span> 
-                    <span className={`ml-2 px-2 py-1 rounded text-xs font-bold ${
-                      game.Result === 'WIN' ? 'bg-green-600 text-white' : 
-                      game.Result === 'LOSS' ? 'bg-red-600 text-white' : 
-                      'bg-gray-600 text-white'
-                    }`}>
-                      {game.Result}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
+          <div className={`${currentTheme.cardBg} p-4 rounded-lg border ${currentTheme.border} overflow-x-auto`}>
+            <table className="w-full">
+              <thead>
+                <tr className={`border-b ${currentTheme.border}`}>
+                  <th className={`text-left p-3 ${currentTheme.text} font-semibold`}>Date</th>
+                  <th className={`text-left p-3 ${currentTheme.text} font-semibold`}>Game</th>
+                  <th className={`text-left p-3 ${currentTheme.text} font-semibold`}>Our Bet</th>
+                  <th className={`text-center p-3 ${currentTheme.text} font-semibold`}>Result</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data?.coverAnalysis?.sort((a, b) => {
+                  // Sort by date if available, otherwise by game name
+                  const dateA = a.Date || a.Game;
+                  const dateB = b.Date || b.Game;
+                  return dateB.localeCompare(dateA);
+                })?.map((game, index) => (
+                  <tr key={index} className={`border-b ${currentTheme.border} hover:opacity-80 transition-opacity`}>
+                    <td className={`p-3 ${currentTheme.textSecondary}`}>
+                      {game.Date || 'TBD'}
+                    </td>
+                    <td className={`p-3 ${currentTheme.text} font-medium`}>
+                      {game.Game}
+                    </td>
+                    <td className={`p-3 ${currentTheme.textSecondary}`}>
+                      {game['Our Bet']}
+                    </td>
+                    <td className="p-3 text-center">
+                      <span className={`px-3 py-1 rounded-full text-sm font-bold ${
+                        game.Result === 'WIN' ? 'bg-green-600 text-white' : 
+                        game.Result === 'LOSS' ? 'bg-red-600 text-white' : 
+                        'bg-gray-600 text-white'
+                      }`}>
+                        {game.Result}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
