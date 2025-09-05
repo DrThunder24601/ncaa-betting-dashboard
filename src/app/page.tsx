@@ -561,7 +561,7 @@ export default function BettingDashboard() {
       {/* Cover Analysis Tab */}
       {activeTab === 'cover-analysis' && (
         <div className="p-6">
-          <h2 className="text-2xl font-bold mb-6">🏈 Cover Analysis</h2>
+          <h2 className="text-2xl font-bold mb-6">🏈 Cover Analysis (Table View)</h2>
           <div className={`${currentTheme.cardBg} p-4 rounded-lg border ${currentTheme.border} overflow-x-auto`}>
             <table className="w-full">
               <thead>
