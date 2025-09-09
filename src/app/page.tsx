@@ -94,17 +94,17 @@ export default function BettingDashboard() {
       // Edge band classification with historical performance
       let confidence, edgeBand, bandEmoji;
       if (edge < 2) {
-        edgeBand = "0-2"; bandEmoji = "🔴"; confidence = "Avoid (40%)";
+        edgeBand = "0-2"; bandEmoji = "🔴"; confidence = "Fade (33.3%)";
       } else if (edge < 5) {
-        edgeBand = "2-5"; bandEmoji = "🟡"; confidence = "Weak (37%)";
+        edgeBand = "2-5"; bandEmoji = "🟡"; confidence = "Fade (33.3%)";
       } else if (edge < 7) {
-        edgeBand = "5-7"; bandEmoji = "🟢"; confidence = "Good (75%)";
+        edgeBand = "5-7"; bandEmoji = "🟢"; confidence = "Good (66.7%)";
       } else if (edge < 9) {
-        edgeBand = "7-9"; bandEmoji = "🔥"; confidence = "Excellent (100%)";
+        edgeBand = "7-9"; bandEmoji = "🔥"; confidence = "Strong (66.7%)";
       } else if (edge < 12) {
-        edgeBand = "9-12"; bandEmoji = "💎"; confidence = "Strong (60%)";
+        edgeBand = "9-12"; bandEmoji = "💎"; confidence = "Strong (66.7%)";
       } else {
-        edgeBand = "12+"; bandEmoji = "👑"; confidence = "Elite (64%)";
+        edgeBand = "12+"; bandEmoji = "👑"; confidence = "Elite (71.4%)";
       }
       
       return {
@@ -279,12 +279,12 @@ export default function BettingDashboard() {
         <h2 className="text-2xl font-bold mb-6 text-white">📊 Edge Band Performance Guide</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
           {[
-            { band: "0-2", emoji: "🔴", record: "2-3", pct: "40%", desc: "Avoid" },
-            { band: "2-5", emoji: "🟡", record: "3-5", pct: "37%", desc: "Weak" },
-            { band: "5-7", emoji: "🟢", record: "3-1", pct: "75%", desc: "Good" },
-            { band: "7-9", emoji: "🔥", record: "2-0", pct: "100%", desc: "Excellent" },
-            { band: "9-12", emoji: "💎", record: "3-2", pct: "60%", desc: "Strong" },
-            { band: "12+", emoji: "👑", record: "9-5", pct: "64%", desc: "Elite" }
+            { band: "0-2", emoji: "🔴", record: "9-18", pct: "33.3%", desc: "Fade" },
+            { band: "2-5", emoji: "🟡", record: "9-18", pct: "33.3%", desc: "Fade" },
+            { band: "5-7", emoji: "🟢", record: "6-3", pct: "66.7%", desc: "Good" },
+            { band: "7-9", emoji: "🔥", record: "14-7", pct: "66.7%", desc: "Strong" },
+            { band: "9-12", emoji: "💎", record: "4-2", pct: "66.7%", desc: "Strong" },
+            { band: "12+", emoji: "👑", record: "5-2", pct: "71.4%", desc: "Elite" }
           ].map((band, index) => (
             <div key={index} className={`${currentTheme.cardBg} p-4 rounded-lg border ${currentTheme.border} text-center`}>
               <div className="text-2xl mb-2">{band.emoji}</div>
@@ -300,7 +300,7 @@ export default function BettingDashboard() {
         
         <div className={`p-4 rounded-lg ${currentTheme.cardBg} border ${currentTheme.border} text-center`}>
           <div className={`text-lg font-bold ${currentTheme.text}`}>
-            🏆 Overall Strategy: Target 5+ point edges (22-16 overall, 57.9%)
+            🏆 Overall Strategy: Target 5+ point edges (29-14 overall, 67.4%) | Fade 0-5 edges (18-9 fade, 66.7%)
           </div>
         </div>
       </div>
@@ -376,12 +376,12 @@ export default function BettingDashboard() {
             
             const games = bandGroups[band].sort((a, b) => b.edge - a.edge);
             const bandInfo = {
-              '12+': { emoji: '👑', name: 'Elite', pct: '64%', color: 'border-purple-500' },
-              '9-12': { emoji: '💎', name: 'Strong', pct: '60%', color: 'border-blue-500' },
-              '7-9': { emoji: '🔥', name: 'Excellent', pct: '100%', color: 'border-red-500' },
-              '5-7': { emoji: '🟢', name: 'Good', pct: '75%', color: 'border-green-500' },
-              '2-5': { emoji: '🟡', name: 'Weak', pct: '37%', color: 'border-yellow-500' },
-              '0-2': { emoji: '🔴', name: 'Avoid', pct: '40%', color: 'border-red-500' }
+              '12+': { emoji: '👑', name: 'Elite', pct: '71.4%', color: 'border-purple-500' },
+              '9-12': { emoji: '💎', name: 'Strong', pct: '66.7%', color: 'border-blue-500' },
+              '7-9': { emoji: '🔥', name: 'Strong', pct: '66.7%', color: 'border-red-500' },
+              '5-7': { emoji: '🟢', name: 'Good', pct: '66.7%', color: 'border-green-500' },
+              '2-5': { emoji: '🟡', name: 'Fade', pct: '33.3%', color: 'border-yellow-500' },
+              '0-2': { emoji: '🔴', name: 'Fade', pct: '33.3%', color: 'border-red-500' }
             }[band];
             
             return (
