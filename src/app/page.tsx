@@ -91,21 +91,16 @@ export default function BettingDashboard() {
         }
       }
       
-      // Edge band classification with historical performance
-      let confidence, edgeBand, bandEmoji;
-      if (edge < 2) {
-        edgeBand = "0-2"; bandEmoji = "🔴"; confidence = "Fade (33.3%)";
-      } else if (edge < 5) {
-        edgeBand = "2-5"; bandEmoji = "🟡"; confidence = "Fade (33.3%)";
-      } else if (edge < 7) {
-        edgeBand = "5-7"; bandEmoji = "🟢"; confidence = "Good (66.7%)";
-      } else if (edge < 9) {
-        edgeBand = "7-9"; bandEmoji = "🔥"; confidence = "Strong (66.7%)";
-      } else if (edge < 12) {
-        edgeBand = "9-12"; bandEmoji = "💎"; confidence = "Strong (66.7%)";
-      } else {
-        edgeBand = "12+"; bandEmoji = "👑"; confidence = "Elite (71.4%)";
-      }
+      // Edge band classification using dynamic performance data
+      const getBandInfo = (edgeValue: number) => {
+        const band = dynamicEdgeBands.find(b => edgeValue >= b.min && edgeValue < b.max);
+        return band || { name: "12+", emoji: "👑", desc: "Elite", pct: "0%" };
+      };
+      
+      const bandInfo = getBandInfo(edge);
+      const edgeBand = bandInfo.name;
+      const bandEmoji = bandInfo.emoji;
+      const confidence = `${bandInfo.desc} (${bandInfo.pct})`;
       
       return {
         ...pred,
@@ -128,6 +123,78 @@ export default function BettingDashboard() {
   const totalBets = validCoverGames.length;
   const wins = validCoverGames.filter(game => game.Result === 'WIN').length;
   const winRate = totalBets > 0 ? (wins / totalBets) * 100 : 0;
+
+  // Calculate dynamic edge band performance from Cover Analysis data
+  const calculateEdgeBandPerformance = () => {
+    const edgeBands = [
+      { min: 0, max: 2, name: "0-2", emoji: "🔴" },
+      { min: 2, max: 5, name: "2-5", emoji: "🟡" },
+      { min: 5, max: 7, name: "5-7", emoji: "🟢" },
+      { min: 7, max: 9, name: "7-9", emoji: "🔥" },
+      { min: 9, max: 12, name: "9-12", emoji: "💎" },
+      { min: 12, max: Infinity, name: "12+", emoji: "👑" }
+    ];
+
+    const bandStats = edgeBands.map(band => ({
+      ...band,
+      games: [] as typeof validCoverGames,
+      wins: 0,
+      total: 0,
+      winRate: 0,
+      record: "0-0",
+      pct: "0%",
+      desc: "No Data"
+    }));
+
+    // Process each game and assign to edge band
+    validCoverGames.forEach(game => {
+      try {
+        const gameRecord = game as unknown as Record<string, string>;
+        const predictedDiff = parseFloat(gameRecord['Predicted Difference'] || '0');
+        const vegasLine = parseFloat(gameRecord['Vegas Line'] || '0');
+        const edge = Math.abs(predictedDiff) - Math.abs(vegasLine);
+        
+        // Find which band this edge falls into
+        const band = bandStats.find(b => edge >= b.min && edge < b.max);
+        if (band) {
+          band.games.push(game);
+          band.total++;
+          if (game.Result === 'WIN') {
+            band.wins++;
+          }
+        }
+      } catch (e) {
+        console.warn('Error processing game for edge bands:', e);
+      }
+    });
+
+    // Calculate win rates and format display data
+    bandStats.forEach(band => {
+      band.winRate = band.total > 0 ? (band.wins / band.total) * 100 : 0;
+      const losses = band.total - band.wins;
+      band.record = `${band.wins}-${losses}`;
+      band.pct = band.total > 0 ? `${band.winRate.toFixed(1)}%` : "0%";
+      
+      // Determine description based on performance
+      if (band.total === 0) {
+        band.desc = "No Data";
+      } else if (band.winRate < 40) {
+        band.desc = "Fade";
+      } else if (band.winRate < 55) {
+        band.desc = "Weak";
+      } else if (band.winRate < 65) {
+        band.desc = "Good";
+      } else if (band.winRate < 75) {
+        band.desc = "Strong";
+      } else {
+        band.desc = "Elite";
+      }
+    });
+
+    return bandStats;
+  };
+
+  const dynamicEdgeBands = calculateEdgeBandPerformance();
 
   // Theme configurations
   const themes = {
@@ -278,17 +345,10 @@ export default function BettingDashboard() {
       <div className={`${currentTheme.headerBg} border-b ${currentTheme.border} p-6`}>
         <h2 className="text-2xl font-bold mb-6 text-white">📊 Edge Band Performance Guide</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-          {[
-            { band: "0-2", emoji: "🔴", record: "9-18", pct: "33.3%", desc: "Fade" },
-            { band: "2-5", emoji: "🟡", record: "9-18", pct: "33.3%", desc: "Fade" },
-            { band: "5-7", emoji: "🟢", record: "6-3", pct: "66.7%", desc: "Good" },
-            { band: "7-9", emoji: "🔥", record: "14-7", pct: "66.7%", desc: "Strong" },
-            { band: "9-12", emoji: "💎", record: "4-2", pct: "66.7%", desc: "Strong" },
-            { band: "12+", emoji: "👑", record: "5-2", pct: "71.4%", desc: "Elite" }
-          ].map((band, index) => (
+          {dynamicEdgeBands.map((band, index) => (
             <div key={index} className={`${currentTheme.cardBg} p-4 rounded-lg border ${currentTheme.border} text-center`}>
               <div className="text-2xl mb-2">{band.emoji}</div>
-              <div className={`font-bold ${currentTheme.text}`}>{band.band} pts</div>
+              <div className={`font-bold ${currentTheme.text}`}>{band.name} pts</div>
               <div className={`text-sm ${currentTheme.textSecondary}`}>{band.record}</div>
               <div className={`font-bold ${band.pct === '100%' ? 'text-green-400' : band.pct.startsWith('7') || band.pct.startsWith('6') ? 'text-yellow-400' : 'text-red-400'}`}>
                 {band.pct}
@@ -300,7 +360,19 @@ export default function BettingDashboard() {
         
         <div className={`p-4 rounded-lg ${currentTheme.cardBg} border ${currentTheme.border} text-center`}>
           <div className={`text-lg font-bold ${currentTheme.text}`}>
-            🏆 Overall Strategy: Target 5+ point edges (29-14 overall, 67.4%) | Fade 0-5 edges (18-9 fade, 66.7%)
+            🏆 Overall Strategy: Target 5+ point edges ({(() => {
+              const highEdgeBands = dynamicEdgeBands.filter(b => b.min >= 5);
+              const totalHighEdge = highEdgeBands.reduce((sum, b) => sum + b.total, 0);
+              const winsHighEdge = highEdgeBands.reduce((sum, b) => sum + b.wins, 0);
+              const highEdgeRate = totalHighEdge > 0 ? ((winsHighEdge / totalHighEdge) * 100).toFixed(1) : '0';
+              return `${winsHighEdge}-${totalHighEdge - winsHighEdge}, ${highEdgeRate}%`;
+            })()}) | Fade 0-5 edges ({(() => {
+              const lowEdgeBands = dynamicEdgeBands.filter(b => b.max <= 5);
+              const totalLowEdge = lowEdgeBands.reduce((sum, b) => sum + b.total, 0);
+              const lossesLowEdge = lowEdgeBands.reduce((sum, b) => sum + (b.total - b.wins), 0);
+              const fadeRate = totalLowEdge > 0 ? ((lossesLowEdge / totalLowEdge) * 100).toFixed(1) : '0';
+              return `${lossesLowEdge}-${totalLowEdge - lossesLowEdge} fade, ${fadeRate}%`;
+            })()})
           </div>
         </div>
       </div>
@@ -375,21 +447,32 @@ export default function BettingDashboard() {
             if (!bandGroups[band] || bandGroups[band].length === 0) return null;
             
             const games = bandGroups[band].sort((a, b) => b.edge - a.edge);
-            const bandInfo = {
-              '12+': { emoji: '👑', name: 'Elite', pct: '71.4%', color: 'border-purple-500' },
-              '9-12': { emoji: '💎', name: 'Strong', pct: '66.7%', color: 'border-blue-500' },
-              '7-9': { emoji: '🔥', name: 'Strong', pct: '66.7%', color: 'border-red-500' },
-              '5-7': { emoji: '🟢', name: 'Good', pct: '66.7%', color: 'border-green-500' },
-              '2-5': { emoji: '🟡', name: 'Fade', pct: '33.3%', color: 'border-yellow-500' },
-              '0-2': { emoji: '🔴', name: 'Fade', pct: '33.3%', color: 'border-red-500' }
-            }[band];
+            const bandInfo = dynamicEdgeBands.find(b => b.name === band) || {
+              name: band,
+              emoji: '❓',
+              desc: 'Unknown',
+              pct: '0%',
+              color: 'border-gray-500'
+            };
+            
+            // Add color mapping based on performance
+            const colorMap: { [key: string]: string } = {
+              '12+': 'border-purple-500',
+              '9-12': 'border-blue-500', 
+              '7-9': 'border-red-500',
+              '5-7': 'border-green-500',
+              '2-5': 'border-yellow-500',
+              '0-2': 'border-red-500'
+            };
+            const color = colorMap[band] || 'border-gray-500';
+            const displayInfo = { ...bandInfo, color };
             
             return (
               <details key={band} className="mb-4" open={['12+', '9-12', '7-9'].includes(band)}>
-                <summary className={`${currentTheme.cardBg} p-4 rounded-lg border ${bandInfo?.color} cursor-pointer hover:opacity-80 transition-opacity`}>
+                <summary className={`${currentTheme.cardBg} p-4 rounded-lg border ${displayInfo.color} cursor-pointer hover:opacity-80 transition-opacity`}>
                   <div className="flex items-center justify-between">
                     <span className="text-xl font-bold flex items-center gap-2">
-                      {bandInfo?.emoji} {band} Point Edge - {bandInfo?.name} ({bandInfo?.pct})
+                      {displayInfo.emoji} {band} Point Edge - {displayInfo.desc} ({displayInfo.pct})
                     </span>
                     <span className={`text-sm ${currentTheme.textMuted}`}>
                       {games.length} games
@@ -402,7 +485,7 @@ export default function BettingDashboard() {
                     const isGoodBet = bet.edge >= minEdge;
                     
                     return (
-                      <div key={index} className={`${currentTheme.cardBg} ${isGoodBet ? `${bandInfo?.color} border-2` : `border ${currentTheme.border}`} rounded-lg p-4 ${isGoodBet ? 'shadow-lg' : ''}`}>
+                      <div key={index} className={`${currentTheme.cardBg} ${isGoodBet ? `${displayInfo.color} border-2` : `border ${currentTheme.border}`} rounded-lg p-4 ${isGoodBet ? 'shadow-lg' : ''}`}>
                         <h4 className={`font-bold mb-2 flex items-center gap-2 ${currentTheme.text}`}>
                           <span>{bet.bandEmoji}</span>
                           <span>{bet.Matchup}</span>
@@ -454,8 +537,16 @@ export default function BettingDashboard() {
               const edge = parseFloat(pred.Edge) || 0;
               const predDiff = parseFloat(pred['Predicted Difference']) || 0;
               const vegasLine = parseFloat(pred.Line) || 0;
-              const edgeBand = edge < 2 ? '0-2' : edge < 5 ? '2-5' : edge < 7 ? '5-7' : edge < 9 ? '7-9' : edge < 12 ? '9-12' : '12+';
-              const bandEmoji = edgeBand === '0-2' ? '🔴' : edgeBand === '2-5' ? '🟡' : edgeBand === '5-7' ? '🟢' : edgeBand === '7-9' ? '🔥' : edgeBand === '9-12' ? '💎' : '👑';
+              
+              // Use dynamic edge band classification
+              const getBandInfoForSchedule = (edgeValue: number) => {
+                return dynamicEdgeBands.find(b => edgeValue >= b.min && edgeValue < b.max) || 
+                       { name: "12+", emoji: "👑" };
+              };
+              
+              const schedBandInfo = getBandInfoForSchedule(edge);
+              const edgeBand = schedBandInfo.name;
+              const bandEmoji = schedBandInfo.emoji;
               
               let betRec = '';
               let betType = '';
@@ -474,17 +565,21 @@ export default function BettingDashboard() {
               }
               
               const isGoodBet = edge >= minEdge;
-              const bandInfo = {
-                '12+': { color: 'border-purple-500' },
-                '9-12': { color: 'border-blue-500' },
-                '7-9': { color: 'border-red-500' },
-                '5-7': { color: 'border-green-500' },
-                '2-5': { color: 'border-yellow-500' },
-                '0-2': { color: 'border-red-500' }
-              }[edgeBand];
+              
+              // Use color mapping for schedule display
+              const colorMapSched: { [key: string]: string } = {
+                '12+': 'border-purple-500',
+                '9-12': 'border-blue-500',
+                '7-9': 'border-red-500',
+                '5-7': 'border-green-500',
+                '2-5': 'border-yellow-500',
+                '0-2': 'border-red-500'
+              };
+              const bandColor = colorMapSched[edgeBand] || 'border-gray-500';
+              const schedDisplayInfo = { color: bandColor };
               
               return (
-                <div key={index} className={`${currentTheme.cardBg} ${isGoodBet ? `${bandInfo?.color} border-2` : `border ${currentTheme.border}`} rounded-lg p-4 ${isGoodBet ? 'shadow-lg' : ''}`}>
+                <div key={index} className={`${currentTheme.cardBg} ${isGoodBet ? `${schedDisplayInfo.color} border-2` : `border ${currentTheme.border}`} rounded-lg p-4 ${isGoodBet ? 'shadow-lg' : ''}`}>
                   <h4 className={`font-bold mb-2 flex items-center gap-2 ${currentTheme.text}`}>
                     <span>{bandEmoji}</span>
                     <span>{pred.Matchup}</span>
