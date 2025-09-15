@@ -95,26 +95,26 @@ export default function BettingDashboard() {
           betRec = 'Below threshold';
         }
 
-        // Edge band classification with actual win rates
+        // Edge band classification
         let confidence = '';
         let edgeBand = '';
         if (edge >= 12) {
-          confidence = 'Elite (58.5%)';
+          confidence = 'Elite (71.4%)';
           edgeBand = '12+';
         } else if (edge >= 9) {
-          confidence = 'Strong (70.6%)';
+          confidence = 'Strong (66.7%)';
           edgeBand = '9-12';
         } else if (edge >= 7) {
-          confidence = 'Good (66.7%)';
+          confidence = 'Strong (66.7%)';
           edgeBand = '7-9';
         } else if (edge >= 5) {
-          confidence = 'Weak (46.2%)';
+          confidence = 'Good (66.7%)';
           edgeBand = '5-7';
         } else if (edge >= 2) {
-          confidence = 'Fade (35.7%)';
+          confidence = 'Fade (33.3%)';
           edgeBand = '2-5';
         } else {
-          confidence = 'Fade (46.7%)';
+          confidence = 'Fade (33.3%)';
           edgeBand = '0-2';
         }
 
@@ -176,51 +176,11 @@ export default function BettingDashboard() {
     switch (edgeBand) {
       case '12+': return '👑';
       case '9-12': return '💎';
-      case '7-9': return '🟢';
-      case '5-7': return '🟡';
-      case '2-5': return '🔴';
-      case '0-2': return '🔴';
-      default: return '⚫';
+      case '7-9': return '🔥';
+      case '5-7': return '🟢';
+      case '2-5': return '🟡';
+      default: return '🔴';
     }
-  };
-
-  const getEdgeBandPerformance = (edgeBand: string) => {
-    // Updated with actual Cover Analysis data
-    const performances: Record<string, { record: string; percentage: number }> = {
-      '12+': { record: '24-17', percentage: 58.5 },
-      '9-12': { record: '12-5', percentage: 70.6 },
-      '7-9': { record: '4-2', percentage: 66.7 },
-      '5-7': { record: '6-7', percentage: 46.2 },
-      '2-5': { record: '10-18', percentage: 35.7 },
-      '0-2': { record: '7-8', percentage: 46.7 }
-    };
-    return performances[edgeBand] || { record: '0-0', percentage: 0 };
-  };
-
-  // Group opportunities by edge band
-  const groupedOpportunities = {
-    '12+': opportunities.filter(opp => opp.edgeBand === '12+'),
-    '9-12': opportunities.filter(opp => opp.edgeBand === '9-12'),
-    '7-9': opportunities.filter(opp => opp.edgeBand === '7-9'),
-    '5-7': opportunities.filter(opp => opp.edgeBand === '5-7'),
-    '2-5': opportunities.filter(opp => opp.edgeBand === '2-5'),
-    '0-2': opportunities.filter(opp => opp.edgeBand === '0-2')
-  };
-
-  const [expandedBands, setExpandedBands] = useState<{[key: string]: boolean}>({
-    '12+': true,
-    '9-12': true,
-    '7-9': true,
-    '5-7': false,
-    '2-5': false,
-    '0-2': false
-  });
-
-  const toggleBand = (band: string) => {
-    setExpandedBands(prev => ({
-      ...prev,
-      [band]: !prev[band]
-    }));
   };
 
   if (loading) {
@@ -251,6 +211,7 @@ export default function BettingDashboard() {
     );
   }
 
+  const highEdgeOpps = opportunities.filter(opp => opp.edge >= 5);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -311,127 +272,77 @@ export default function BettingDashboard() {
           </div>
         )}
 
-        {/* Edge Band Organization */}
+        {/* High-Edge Opportunities */}
+        {highEdgeOpps.length > 0 && (
+          <div className="bg-white rounded-lg shadow mb-8">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900">
+                🎯 High-Confidence Bets ({highEdgeOpps.length})
+              </h2>
+              <p className="text-gray-600">5+ point edges with 67%+ historical win rate</p>
+            </div>
+            <div className="p-6">
+              <div className="grid gap-4">
+                {highEdgeOpps.map((opp, index) => (
+                  <div key={index} className={`border-2 rounded-lg p-4 ${getEdgeBandStyle(opp.edgeBand)}`}>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="font-bold text-lg">{getEdgeBandEmoji(opp.edgeBand)} {opp.matchup}</div>
+                        <div className="text-lg font-semibold mt-1">{opp.betRecommendation}</div>
+                        <div className="text-sm mt-1">{opp.confidence}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold">{opp.edge.toFixed(1)}</div>
+                        <div className="text-sm">Edge</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* All Betting Opportunities */}
         <div className="bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-xl font-bold text-gray-900">
-              📊 Predictions by Edge Band ({opportunities.length})
+              📊 All Opportunities ({opportunities.length})
             </h2>
-            <p className="text-gray-600">Organized by edge size with live win rates</p>
+            <p className="text-gray-600">Complete list sorted by edge value</p>
           </div>
-          <div className="p-6 space-y-4">
+          <div className="p-6">
             {opportunities.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 No betting opportunities available
               </div>
             ) : (
-              <>
-                {(['12+', '9-12', '7-9', '5-7', '2-5', '0-2'] as const).map(band => {
-                  const bandOpps = groupedOpportunities[band];
-                  if (bandOpps.length === 0) return null;
-
-                  const performance = getEdgeBandPerformance(band);
-                  const valueBets = bandOpps.filter(opp => opp.edge >= 2.5).length;
-                  const isExpanded = expandedBands[band];
-
-                  return (
-                    <div key={band} className="border border-gray-200 rounded-lg">
-                      {/* Collapsible Header */}
-                      <button
-                        onClick={() => toggleBand(band)}
-                        className="w-full px-4 py-3 flex justify-between items-center hover:bg-gray-50 rounded-t-lg"
-                      >
-                        <div className="flex items-center space-x-3">
-                          <span className="text-2xl">{getEdgeBandEmoji(band)}</span>
-                          <div className="text-left">
-                            <div className="font-semibold text-gray-900">
-                              {band} Point Edge ({performance.record}, {performance.percentage}%)
-                            </div>
-                            <div className="text-sm text-gray-600">
-                              {bandOpps.length} games
-                              {valueBets > 0 && (
-                                <span className="ml-2 px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
-                                  {valueBets} VALUE BETS
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
+              <div className="grid gap-3">
+                {opportunities.map((opp, index) => (
+                  <div key={index} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                    <div className="flex justify-between items-center">
+                      <div className="flex-1">
                         <div className="flex items-center space-x-2">
-                          <div className={`px-3 py-1 rounded text-sm font-medium ${getEdgeBandStyle(band)}`}>
-                            {performance.percentage}% Win Rate
-                          </div>
-                          <div className={`transform transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
-                            ↓
-                          </div>
+                          <span className="text-lg">{getEdgeBandEmoji(opp.edgeBand)}</span>
+                          <span className="font-semibold">{opp.matchup}</span>
+                          <span className={`px-2 py-1 rounded text-xs ${getEdgeBandStyle(opp.edgeBand)}`}>
+                            {opp.edgeBand}
+                          </span>
                         </div>
-                      </button>
-
-                      {/* Collapsible Content */}
-                      {isExpanded && (
-                        <div className="border-t border-gray-200 p-4 space-y-3">
-                          {bandOpps.map((opp, index) => (
-                            <div key={index} className="border border-gray-100 rounded-lg p-3 hover:bg-gray-50">
-                              <div className="flex justify-between items-start">
-                                <div className="flex-1">
-                                  <div className="font-semibold text-gray-900 mb-1">
-                                    {opp.matchup}
-                                  </div>
-                                  {opp.edge >= 2.5 ? (
-                                    <div className="text-green-700 font-medium">
-                                      🎯 {opp.betRecommendation}
-                                    </div>
-                                  ) : (
-                                    <div className="text-gray-500">
-                                      No betting value (edge too small)
-                                    </div>
-                                  )}
-                                  <div className="text-xs text-gray-500 mt-1">
-                                    Model: {opp.ourLine.toFixed(1)} | Vegas: {opp.vegasLine.toFixed(1)}
-                                  </div>
-                                </div>
-                                <div className="text-right ml-4">
-                                  <div className="text-xl font-bold text-gray-900">
-                                    {opp.edge.toFixed(1)}
-                                  </div>
-                                  <div className="text-xs text-gray-500">Edge</div>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
+                        <div className="text-sm text-gray-600 mt-1">
+                          {opp.edge >= 2 ? opp.betRecommendation : 'Below betting threshold'}
                         </div>
-                      )}
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold text-lg">{opp.edge.toFixed(1)}</div>
+                        <div className="text-xs text-gray-500">Edge</div>
+                      </div>
                     </div>
-                  );
-                })}
-              </>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
-        </div>
-
-        {/* Performance Summary */}
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mt-6">
-          {(['12+', '9-12', '7-9', '5-7', '2-5', '0-2'] as const).map(band => {
-            const performance = getEdgeBandPerformance(band);
-            const bandOpps = groupedOpportunities[band];
-            
-            return (
-              <div key={band} className={`p-3 rounded-lg text-center ${getEdgeBandStyle(band)}`}>
-                <div className="text-lg font-bold">
-                  {getEdgeBandEmoji(band)} {band}
-                </div>
-                <div className="text-sm mt-1">
-                  {performance.record}
-                </div>
-                <div className="text-sm font-semibold">
-                  {performance.percentage}%
-                </div>
-                <div className="text-xs mt-1">
-                  {bandOpps.length} current
-                </div>
-              </div>
-            );
-          })}
         </div>
       </div>
     </div>
