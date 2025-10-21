@@ -28,7 +28,7 @@ export async function GET() {
       clearTimeout(timeoutId);
       
       if (apiResponse.ok) {
-        const apiData = await apiResponse.json() as { success: boolean; data: { predictions: any[]; generated_at: string } };
+        const apiData = await apiResponse.json() as { success: boolean; data: { predictions: SheetRow[]; generated_at: string } };
         if (apiData.success) {
           console.log('Data fetched from API server (real-time)');
           
@@ -41,7 +41,7 @@ export async function GET() {
           });
           
           clearTimeout(resultsTimeoutId);
-          const resultsData = resultsResponse.ok ? await resultsResponse.json() as { data: { cover_analysis: any[]; vegas_spread_analysis: any[] } } : null;
+          const resultsData = resultsResponse.ok ? await resultsResponse.json() as { data: { cover_analysis: SheetRow[]; vegas_spread_analysis: SheetRow[] } } : null;
           
           return NextResponse.json({
             predictions: apiData.data.predictions || [],
@@ -53,7 +53,7 @@ export async function GET() {
           });
         }
       }
-    } catch (apiError) {
+    } catch {
       console.log('API server unavailable, falling back to Google Sheets');
     }
     

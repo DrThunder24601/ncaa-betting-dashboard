@@ -9,9 +9,14 @@ export async function GET() {
     let systemStatus = null;
     
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      
       const healthResponse = await fetch(`${API_SERVER_URL}/api/health`, {
-        timeout: 3000
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
       
       if (healthResponse.ok) {
         apiServerStatus = 'online';
@@ -23,11 +28,11 @@ export async function GET() {
             const statusData = await statusResponse.json();
             systemStatus = statusData;
           }
-        } catch (e) {
+        } catch {
           // System status endpoint might not be available
         }
       }
-    } catch (e) {
+    } catch {
       // API server is offline
     }
     
