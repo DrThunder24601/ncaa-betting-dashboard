@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { google } from 'googleapis';
 import fs from 'fs';
+import fetch from 'node-fetch';
 
 // Google Sheets configuration
 const SHEET_ID = "1Rmj5fbhwkQivv98hR5GqCNhBkV8-EwEtEA74bsC6wAU";
@@ -12,7 +13,51 @@ interface SheetRow {
 
 export async function GET() {
   try {
-    // Get credentials from environment variables or fallback to local file
+    // ENHANCED: Try API server first, fallback to direct Google Sheets (preserves existing)
+    const API_SERVER_URL = process.env.API_SERVER_URL || 'http://localhost:8001';
+    
+    // Try to get data from API server for real-time updates
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
+      const apiResponse = await fetch(`${API_SERVER_URL}/api/predictions/current`, {
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (apiResponse.ok) {
+        const apiData = await apiResponse.json() as { success: boolean; data: { predictions: any[]; generated_at: string } };
+        if (apiData.success) {
+          console.log('Data fetched from API server (real-time)');
+          
+          // Also get results data
+          const resultsController = new AbortController();
+          const resultsTimeoutId = setTimeout(() => resultsController.abort(), 5000);
+          
+          const resultsResponse = await fetch(`${API_SERVER_URL}/api/results/current`, {
+            signal: resultsController.signal
+          });
+          
+          clearTimeout(resultsTimeoutId);
+          const resultsData = resultsResponse.ok ? await resultsResponse.json() as { data: { cover_analysis: any[]; vegas_spread_analysis: any[] } } : null;
+          
+          return NextResponse.json({
+            predictions: apiData.data.predictions || [],
+            coverAnalysis: resultsData?.data?.cover_analysis || [],
+            results: resultsData?.data?.vegas_spread_analysis || [],
+            lastUpdated: apiData.data.generated_at || new Date().toISOString(),
+            source: 'api_server',
+            realTime: true
+          });
+        }
+      }
+    } catch (apiError) {
+      console.log('API server unavailable, falling back to Google Sheets');
+    }
+    
+    // FALLBACK: Original Google Sheets logic (PRESERVED EXACTLY)
     let credentials;
     
     if (process.env.GOOGLE_PRIVATE_KEY && process.env.GOOGLE_CLIENT_EMAIL) {
@@ -72,7 +117,7 @@ export async function GET() {
     const coverData = coverResponse.data.values || [];
     const resultsData = resultsResponse.data.values || [];
     
-    // Convert to structured data
+    // Convert to structured data (PRESERVED EXISTING LOGIC)
     const predictions: SheetRow[] = predictionsData.length > 1 ? 
       predictionsData.slice(1).map(row => {
         const headers = predictionsData[0];
@@ -107,7 +152,9 @@ export async function GET() {
       predictions,
       coverAnalysis,
       results,
-      lastUpdated: new Date().toISOString()
+      lastUpdated: new Date().toISOString(),
+      source: 'google_sheets',
+      realTime: false
     });
     
   } catch (error) {

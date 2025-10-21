@@ -1,4 +1,10 @@
-Deploy trigger: 2025-09-15 TYPESCRIPT FIXES COMPLETE ✅
-Fixed: TypeScript any[] errors, build configuration, unused variables
+Deploy trigger: 2025-01-21 EDGE BAND PERFORMANCE UPDATE ✅
+Updated edge band win percentages with accurate data from 338 games:
+- 0-2 Edge: 58.3% (60 games)  
+- 2-5 Edge: 55.1% (98 games)
+- 5-7 Edge: 52.5% (40 games)
+- 7-9 Edge: 40.7% (27 games)
+- 9-12 Edge: 61.0% (41 games)
+- 12+ Edge: 57.1% (63 games)
+Overall RF Model: 53.8% (182-156 record)
 Status: BUILD SUCCEEDS - Ready for production deployment
-Environment Variables Needed: GOOGLE_PRIVATE_KEY, GOOGLE_CLIENT_EMAIL

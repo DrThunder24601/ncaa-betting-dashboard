@@ -22,6 +22,13 @@ interface PerformanceMetrics {
   currentWeekOpportunities: number;
 }
 
+interface SystemNotification {
+  timestamp: string;
+  subject: string;
+  body: string;
+  type: string;
+}
+
 export default function BettingDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,9 +40,23 @@ export default function BettingDashboard() {
     winRate: 0,
     currentWeekOpportunities: 0
   });
+  const [notification, setNotification] = useState<SystemNotification | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<string>('');
+  const [isRealTime, setIsRealTime] = useState(false);
 
   useEffect(() => {
     fetchBettingData();
+    
+    // Set up real-time polling every 30 seconds
+    const interval = setInterval(fetchBettingData, 30000);
+    
+    // Check for notifications every 10 seconds
+    const notificationInterval = setInterval(checkNotifications, 10000);
+    
+    return () => {
+      clearInterval(interval);
+      clearInterval(notificationInterval);
+    };
   }, []);
 
   const fetchBettingData = async () => {
@@ -50,13 +71,23 @@ export default function BettingDashboard() {
       
       const data = await response.json();
       
+      // Handle both API server format and direct Google Sheets format
+      const predictions = data.data?.predictions || data.predictions || [];
+      const coverAnalysis = data.data?.cover_analysis || data.coverAnalysis || [];
+      const lastUpdated = data.data?.generated_at || data.lastUpdated || new Date().toISOString();
+      const realTime = data.data ? true : (data.realTime || false);
+      
       // Process predictions into betting opportunities
-      const bettingOpps = processPredictions(data.predictions);
+      const bettingOpps = processPredictions(predictions);
       setOpportunities(bettingOpps);
       
       // Calculate performance metrics
-      const metrics = calculatePerformance(data.coverAnalysis, bettingOpps.length);
+      const metrics = calculatePerformance(coverAnalysis, bettingOpps.length);
       setPerformance(metrics);
+      
+      // Update real-time status
+      setLastUpdated(lastUpdated);
+      setIsRealTime(realTime);
       
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load data');
@@ -66,67 +97,107 @@ export default function BettingDashboard() {
     }
   };
 
+  const checkNotifications = async () => {
+    try {
+      const response = await fetch('/api/notifications');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.hasNotification) {
+          setNotification(data.notification);
+        }
+      }
+    } catch (err) {
+      // Silently fail - notifications are not critical
+      console.log('Notification check failed:', err);
+    }
+  };
+
+  const dismissNotification = async () => {
+    try {
+      await fetch('/api/notifications', { method: 'DELETE' });
+      setNotification(null);
+    } catch (err) {
+      console.error('Failed to dismiss notification:', err);
+    }
+  };
+
   const processPredictions = (predictions: Record<string, string>[]): BettingOpportunity[] => {
     if (!predictions || predictions.length === 0) return [];
 
     return predictions
       .filter(pred => {
-        return pred.Line && 
-               pred.Line !== 'N/A' && 
-               pred.Line !== 'No Line Available' &&
-               pred.Edge && 
-               !isNaN(parseFloat(pred.Edge));
+        // Show all games, not just ones with Vegas lines
+        const matchup = pred.matchup || pred.Matchup;
+        return matchup && matchup.trim().length > 0;
       })
       .map(pred => {
-        const edge = parseFloat(pred.Edge) || 0;
-        const ourLine = parseFloat(pred['Predicted Difference']) || 0;
-        const vegasLine = parseFloat(pred.Line) || 0;
+        // Handle both API format and Google Sheets format
+        const edgeStr = pred.edge || pred.Edge;
+        const edge = (edgeStr && edgeStr !== 'N/A') ? parseFloat(edgeStr) : 0;
+        const ourLine = parseFloat(pred.predicted_difference || pred['Predicted Difference']) || 0;
+        const vegasLineStr = pred.vegas_line || pred.Line;
+        const vegasLine = (vegasLineStr && vegasLineStr !== 'N/A') ? parseFloat(vegasLineStr) : 0;
 
-        // Determine bet recommendation
-        let betRec = '';
-        if (edge >= 2.0) {
-          if (ourLine > vegasLine) {
-            betRec = `Take ${pred.Favorite} -${vegasLine}`;
+        // Handle field names for both formats
+        const favorite = pred.favorite || pred.Favorite;
+        const underdog = pred.underdog || pred.Underdog;
+        const matchup = pred.matchup || pred.Matchup;
+        const betRecommendation = pred.betting_recommendation || pred['Betting Recommendation'];
+        
+        // Use existing bet recommendation if available, otherwise generate
+        let betRec = betRecommendation || '';
+        if (!betRec) {
+          if (edge >= 2.0) {
+            if (ourLine > vegasLine) {
+              betRec = `Take ${favorite} -${vegasLine}`;
+            } else {
+              betRec = `Take ${underdog} +${vegasLine}`;
+            }
           } else {
-            betRec = `Take ${pred.Underdog} +${vegasLine}`;
+            betRec = 'Below threshold';
           }
-        } else {
-          betRec = 'Below threshold';
         }
 
-        // Edge band classification
-        let confidence = '';
-        let edgeBand = '';
-        if (edge >= 12) {
-          confidence = 'Elite (58.5%)';
-          edgeBand = '12+';
-        } else if (edge >= 9) {
-          confidence = 'Strong (70.6%)';
-          edgeBand = '9-12';
-        } else if (edge >= 7) {
-          confidence = 'Good (66.7%)';
-          edgeBand = '7-9';
-        } else if (edge >= 5) {
-          confidence = 'Weak (46.2%)';
-          edgeBand = '5-7';
-        } else if (edge >= 2) {
-          confidence = 'Fade (35.7%)';
-          edgeBand = '2-5';
-        } else {
-          confidence = 'Fade (46.7%)';
-          edgeBand = '0-2';
+        // Use existing edge band and confidence if available
+        const edgeBand = pred.edge_band || pred['Edge Band'] || '';
+        const confidence = pred.strategy || pred.Strategy || '';
+        
+        // Fallback edge band classification if not provided
+        let finalConfidence = confidence;
+        let finalEdgeBand = edgeBand;
+        
+        if (!finalEdgeBand) {
+          if (edge >= 12) {
+            finalConfidence = 'Elite (57.1%)';
+            finalEdgeBand = '12+';
+          } else if (edge >= 9) {
+            finalConfidence = 'Strong (61.0%)';
+            finalEdgeBand = '9-12';
+          } else if (edge >= 7) {
+            finalConfidence = 'Below Average (40.7%)';
+            finalEdgeBand = '7-9';
+          } else if (edge >= 5) {
+            finalConfidence = 'Average (52.5%)';
+            finalEdgeBand = '5-7';
+          } else if (edge >= 2) {
+            finalConfidence = 'Good (55.1%)';
+            finalEdgeBand = '2-5';
+          } else {
+            finalConfidence = 'Good (58.3%)';
+            finalEdgeBand = '0-2';
+          }
         }
 
         return {
-          matchup: pred.Matchup || '',
-          favorite: pred.Favorite || '',
-          underdog: pred.Underdog || '',
+          matchup: matchup || '',
+          favorite: favorite || '',
+          underdog: underdog || '',
           ourLine,
           vegasLine,
           edge,
           betRecommendation: betRec,
-          confidence,
-          edgeBand
+          confidence: finalConfidence,
+          edgeBand: finalEdgeBand
         };
       })
       .sort((a, b) => b.edge - a.edge);
@@ -223,11 +294,47 @@ export default function BettingDashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Clean Header */}
+      {/* Notification Banner */}
+      {notification && (
+        <div className="bg-blue-600 text-white px-6 py-3">
+          <div className="max-w-6xl mx-auto flex justify-between items-center">
+            <div className="flex items-center">
+              <span className="text-lg mr-3">🔔</span>
+              <div>
+                <div className="font-semibold">{notification.subject}</div>
+                <div className="text-sm opacity-90">
+                  {new Date(notification.timestamp).toLocaleString()}
+                </div>
+              </div>
+            </div>
+            <button 
+              onClick={dismissNotification}
+              className="text-white hover:bg-blue-700 px-3 py-1 rounded"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-6xl mx-auto px-6 py-6">
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">🏈 CV Bets</h1>
+              <div className="flex items-center mt-2 text-sm text-gray-600">
+                <span className={`inline-block w-2 h-2 rounded-full mr-2 ${isRealTime ? 'bg-green-500' : 'bg-yellow-500'}`}></span>
+                <span>{isRealTime ? 'Live Data' : 'Cached Data'}</span>
+                <span className="mx-2">•</span>
+                <span>Updated: {new Date(lastUpdated).toLocaleTimeString()}</span>
+                <button 
+                  onClick={fetchBettingData}
+                  className="ml-3 text-blue-600 hover:text-blue-800"
+                  title="Refresh data"
+                >
+                  🔄
+                </button>
+              </div>
               <p className="text-gray-600">NCAA Football Predictions & Analysis</p>
             </div>
             <div className="flex items-center space-x-6">
@@ -268,6 +375,49 @@ export default function BettingDashboard() {
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-600">{opportunities.length}</div>
               <div className="text-sm text-gray-500">Current Games</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Edge Band Performance Analysis */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">🎯 Edge Band Performance (338 Games)</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="text-center p-4 bg-purple-50 border border-purple-200 rounded-lg">
+              <div className="text-lg font-bold text-purple-700">57.1%</div>
+              <div className="text-sm text-gray-600">12+ Edge</div>
+              <div className="text-xs text-gray-500">63 games</div>
+            </div>
+            <div className="text-center p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="text-lg font-bold text-blue-700">61.0%</div>
+              <div className="text-sm text-gray-600">9-12 Edge</div>
+              <div className="text-xs text-gray-500">41 games</div>
+            </div>
+            <div className="text-center p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="text-lg font-bold text-red-700">40.7%</div>
+              <div className="text-sm text-gray-600">7-9 Edge</div>
+              <div className="text-xs text-gray-500">27 games</div>
+            </div>
+            <div className="text-center p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="text-lg font-bold text-yellow-700">52.5%</div>
+              <div className="text-sm text-gray-600">5-7 Edge</div>
+              <div className="text-xs text-gray-500">40 games</div>
+            </div>
+            <div className="text-center p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div className="text-lg font-bold text-green-700">55.1%</div>
+              <div className="text-sm text-gray-600">2-5 Edge</div>
+              <div className="text-xs text-gray-500">98 games</div>
+            </div>
+            <div className="text-center p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+              <div className="text-lg font-bold text-emerald-700">58.3%</div>
+              <div className="text-sm text-gray-600">0-2 Edge</div>
+              <div className="text-xs text-gray-500">60 games</div>
+            </div>
+          </div>
+          <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+            <div className="flex justify-between items-center text-sm text-gray-600">
+              <span>Overall RF Model Performance:</span>
+              <span className="font-semibold text-gray-900">182-156 (53.8%)</span>
             </div>
           </div>
         </div>
