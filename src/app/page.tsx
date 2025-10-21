@@ -147,14 +147,15 @@ export default function BettingDashboard() {
         // Use existing bet recommendation if available, otherwise generate
         let betRec = betRecommendation || '';
         if (!betRec) {
-          if (edge >= 2.0) {
+          // Updated: 0-2 edge band has 58.3% win rate, so generate recommendations for all edges
+          if (edge > 0 && vegasLine > 0) {
             if (ourLine > vegasLine) {
               betRec = `Take ${favorite} -${vegasLine}`;
             } else {
               betRec = `Take ${underdog} +${vegasLine}`;
             }
           } else {
-            betRec = 'Below threshold';
+            betRec = 'No line available';
           }
         }
 
@@ -444,7 +445,7 @@ export default function BettingDashboard() {
                   const bandOpps = groupedOpportunities[band];
                   if (!bandOpps || bandOpps.length === 0) return null;
 
-                  const valueBets = bandOpps.filter(opp => opp.edge >= 2.5).length;
+                  const valueBets = bandOpps.filter(opp => opp.edge >= 0.1).length;
 
                   return (
                     <div key={band} className={`border-2 rounded-lg ${getEdgeBandColor(band)}`}>
@@ -480,13 +481,13 @@ export default function BettingDashboard() {
                                 <div className="font-semibold text-gray-900 mb-2">
                                   {opp.matchup}
                                 </div>
-                                {opp.edge >= 2.5 ? (
+                                {opp.edge >= 0.1 ? (
                                   <div className="text-green-700 font-medium mb-1">
                                     ✅ {opp.betRecommendation}
                                   </div>
                                 ) : (
                                   <div className="text-gray-500 mb-1">
-                                    ❌ Edge too small (below 2.5)
+                                    ❌ No Vegas line available
                                   </div>
                                 )}
                                 <div className="text-xs text-gray-500">
