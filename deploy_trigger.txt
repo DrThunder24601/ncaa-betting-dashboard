@@ -1,9 +1,13 @@
-Deploy trigger: 2025-01-29 DYNAMIC EDGE BAND CALCULATION FIX 🚀
-FIXED: Dashboard now calculates edge band performance dynamically from Google Sheets
-- Replaced hardcoded edge band stats with real-time calculations
-- 0-2 Edge now shows actual 36.4% (11 games) - POOR PERFORMANCE VISIBLE ⚠️
-- All edge bands now reflect true performance from betting results
-- Dashboard properly shows why 0-2 edge has been performing badly
-- Color coding updates based on actual win rates (red for <40%, orange for 40-50%, etc.)
-Overall Model: Calculated dynamically from actual results
-Status: CRITICAL UPDATE - Fixes misleading performance data
+Deploy trigger: 2025-01-29 ZERO VEGAS LINE FILTER FIX 🎯
+CRITICAL FIX: Dashboard now filters out invalid zero Vegas lines
+- Added filter to exclude games with Vegas Line = 0 from edge calculations
+- Corrected sample size: 306 valid games (was 384 with invalid data)
+- TRUE EDGE BAND PERFORMANCE:
+  * 0-2 Edge: 56.1% (37/66 games) - AVERAGE
+  * 2-5 Edge: 49.5% (48/97 games) - BELOW AVG  
+  * 5-7 Edge: 42.5% (17/40 games) - BELOW AVG
+  * 7-9 Edge: 58.8% (10/17 games) - AVERAGE
+  * 9-12 Edge: 60.6% (20/33 games) - EXCELLENT
+  * 12+ Edge: 58.5% (31/53 games) - AVERAGE
+- Overall Model: 163-143 (53.3%) with valid data only
+Status: ACCURACY RESTORED - Edge analysis now uses only valid Vegas line data

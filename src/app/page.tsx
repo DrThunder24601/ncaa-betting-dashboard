@@ -252,6 +252,9 @@ export default function BettingDashboard() {
       
       if (isNaN(pred) || isNaN(vegas)) return null;
       
+      // Filter out zero or invalid Vegas lines
+      if (vegas === 0.0 || vegas === 0) return null;
+      
       const edge = Math.abs(Math.abs(pred) - Math.abs(vegas));
       
       if (edge >= 12) return '12+';
