@@ -22,6 +22,14 @@ interface PerformanceMetrics {
   currentWeekOpportunities: number;
 }
 
+interface EdgeBandStats {
+  [band: string]: {
+    wins: number;
+    total: number;
+    winRate: number;
+  };
+}
+
 interface SystemNotification {
   timestamp: string;
   subject: string;
@@ -40,6 +48,7 @@ export default function BettingDashboard() {
     winRate: 0,
     currentWeekOpportunities: 0
   });
+  const [edgeBandStats, setEdgeBandStats] = useState<EdgeBandStats>({});
   const [notification, setNotification] = useState<SystemNotification | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string>('');
   const [isRealTime, setIsRealTime] = useState(false);
@@ -84,6 +93,10 @@ export default function BettingDashboard() {
       // Calculate performance metrics
       const metrics = calculatePerformance(coverAnalysis, bettingOpps.length);
       setPerformance(metrics);
+      
+      // Calculate edge band statistics
+      const edgeStats = calculateEdgeBandStats(coverAnalysis);
+      setEdgeBandStats(edgeStats);
       
       // Update real-time status
       setLastUpdated(lastUpdated);
@@ -230,6 +243,35 @@ export default function BettingDashboard() {
       winRate,
       currentWeekOpportunities: currentOpps
     };
+  };
+
+  const calculateEdgeBandStats = (coverAnalysis: Record<string, string>[]): EdgeBandStats => {
+    const stats: EdgeBandStats = {};
+    
+    if (!coverAnalysis || coverAnalysis.length === 0) {
+      return stats;
+    }
+
+    coverAnalysis.forEach(bet => {
+      const edgeBand = bet['Edge Band'] || bet['RF Edge Band'] || bet['Reddit Edge Band'];
+      const result = bet.Result || bet['RF Spread Result'] || bet['Reddit Spread Result'];
+      
+      if (edgeBand && result && edgeBand !== 'N/A') {
+        if (!stats[edgeBand]) {
+          stats[edgeBand] = { wins: 0, total: 0, winRate: 0 };
+        }
+        
+        stats[edgeBand].total += 1;
+        
+        if (result === 'WIN' || result === 'W' || result === 'CORRECT') {
+          stats[edgeBand].wins += 1;
+        }
+        
+        stats[edgeBand].winRate = (stats[edgeBand].wins / stats[edgeBand].total) * 100;
+      }
+    });
+    
+    return stats;
   };
 
   const getEdgeBandColor = (edgeBand: string) => {
@@ -382,43 +424,43 @@ export default function BettingDashboard() {
 
         {/* Edge Band Performance Analysis */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">🎯 Edge Band Performance (338 Games)</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            <div className="text-center p-4 bg-purple-50 border border-purple-200 rounded-lg">
-              <div className="text-lg font-bold text-purple-700">57.1%</div>
-              <div className="text-sm text-gray-600">12+ Edge</div>
-              <div className="text-xs text-gray-500">63 games</div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            🎯 Edge Band Performance ({Object.values(edgeBandStats).reduce((total, band) => total + band.total, 0)} Games)
+          </h2>
+          {Object.keys(edgeBandStats).length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              {['12+', '9-12', '7-9', '5-7', '2-5', '0-2'].map(bandKey => {
+                const bandStats = edgeBandStats[bandKey];
+                if (!bandStats) return null;
+                
+                const getColorClasses = (band: string, winRate: number) => {
+                  if (winRate >= 60) return 'bg-green-50 border-green-200 text-green-700';
+                  if (winRate >= 50) return 'bg-yellow-50 border-yellow-200 text-yellow-700';
+                  if (winRate >= 40) return 'bg-orange-50 border-orange-200 text-orange-700';
+                  return 'bg-red-50 border-red-200 text-red-700';
+                };
+                
+                return (
+                  <div key={bandKey} className={`text-center p-4 border rounded-lg ${getColorClasses(bandKey, bandStats.winRate)}`}>
+                    <div className="text-lg font-bold">{bandStats.winRate.toFixed(1)}%</div>
+                    <div className="text-sm text-gray-600">{bandKey} Edge</div>
+                    <div className="text-xs text-gray-500">{bandStats.total} games</div>
+                  </div>
+                );
+              })}
             </div>
-            <div className="text-center p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="text-lg font-bold text-blue-700">61.0%</div>
-              <div className="text-sm text-gray-600">9-12 Edge</div>
-              <div className="text-xs text-gray-500">41 games</div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <div className="text-lg">No edge band performance data available</div>
+              <div className="text-sm">Data will appear once betting results are recorded</div>
             </div>
-            <div className="text-center p-4 bg-red-50 border border-red-200 rounded-lg">
-              <div className="text-lg font-bold text-red-700">40.7%</div>
-              <div className="text-sm text-gray-600">7-9 Edge</div>
-              <div className="text-xs text-gray-500">27 games</div>
-            </div>
-            <div className="text-center p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <div className="text-lg font-bold text-yellow-700">52.5%</div>
-              <div className="text-sm text-gray-600">5-7 Edge</div>
-              <div className="text-xs text-gray-500">40 games</div>
-            </div>
-            <div className="text-center p-4 bg-green-50 border border-green-200 rounded-lg">
-              <div className="text-lg font-bold text-green-700">55.1%</div>
-              <div className="text-sm text-gray-600">2-5 Edge</div>
-              <div className="text-xs text-gray-500">98 games</div>
-            </div>
-            <div className="text-center p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
-              <div className="text-lg font-bold text-emerald-700">58.3%</div>
-              <div className="text-sm text-gray-600">0-2 Edge</div>
-              <div className="text-xs text-gray-500">60 games</div>
-            </div>
-          </div>
+          )}
           <div className="mt-4 p-3 bg-gray-50 rounded-lg">
             <div className="flex justify-between items-center text-sm text-gray-600">
-              <span>Overall RF Model Performance:</span>
-              <span className="font-semibold text-gray-900">182-156 (53.8%)</span>
+              <span>Overall Model Performance:</span>
+              <span className="font-semibold text-gray-900">
+                {performance.wins}-{performance.losses} ({performance.winRate.toFixed(1)}%)
+              </span>
             </div>
           </div>
         </div>
