@@ -245,6 +245,26 @@ export default function BettingDashboard() {
     };
   };
 
+  const calculateEdgeBand = (predictedDiff: string, vegasLine: string): string | null => {
+    try {
+      const pred = parseFloat(predictedDiff);
+      const vegas = parseFloat(vegasLine);
+      
+      if (isNaN(pred) || isNaN(vegas)) return null;
+      
+      const edge = Math.abs(Math.abs(pred) - Math.abs(vegas));
+      
+      if (edge >= 12) return '12+';
+      if (edge >= 9) return '9-12';
+      if (edge >= 7) return '7-9';
+      if (edge >= 5) return '5-7';
+      if (edge >= 2) return '2-5';
+      return '0-2';
+    } catch {
+      return null;
+    }
+  };
+
   const calculateEdgeBandStats = (coverAnalysis: Record<string, string>[]): EdgeBandStats => {
     const stats: EdgeBandStats = {};
     
@@ -253,7 +273,22 @@ export default function BettingDashboard() {
     }
 
     coverAnalysis.forEach(bet => {
-      const edgeBand = bet['Edge Band'] || bet['RF Edge Band'] || bet['Reddit Edge Band'];
+      // First try to find existing edge band columns
+      let edgeBand = bet['Edge Band'] || bet['RF Edge Band'] || bet['Reddit Edge Band'];
+      
+      // If no edge band column, calculate it from Cover Analysis data
+      if (!edgeBand || edgeBand === 'N/A') {
+        const predictedDiff = bet['Predicted Difference'];
+        const vegasLine = bet['Vegas Line'];
+        
+        if (predictedDiff && vegasLine) {
+          const calculatedBand = calculateEdgeBand(predictedDiff, vegasLine);
+          if (calculatedBand) {
+            edgeBand = calculatedBand;
+          }
+        }
+      }
+      
       const result = bet.Result || bet['RF Spread Result'] || bet['Reddit Spread Result'];
       
       if (edgeBand && result && edgeBand !== 'N/A') {
